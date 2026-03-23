@@ -2,6 +2,10 @@
 import io
 from pathlib import Path
 
+from core.logging_config import get_logger
+
+logger = get_logger(__name__)
+
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     """Extract plain text from PDF bytes using PyMuPDF."""
@@ -28,9 +32,11 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 def extract_text(file_bytes: bytes, filename: str) -> str:
     """Dispatch to correct extractor based on file extension."""
     ext = Path(filename).suffix.lower()
+    logger.debug("Extracting text from file", extra={"filename": filename, "ext": ext, "size_bytes": len(file_bytes)})
     if ext == ".pdf":
         return extract_text_from_pdf(file_bytes)
     elif ext in (".docx", ".doc"):
         return extract_text_from_docx(file_bytes)
     else:
+        logger.warning("Unsupported file type", extra={"filename": filename, "ext": ext})
         raise ValueError(f"Unsupported file type: {ext}. Upload PDF or DOCX.")

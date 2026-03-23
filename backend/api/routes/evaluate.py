@@ -4,10 +4,13 @@ import uuid
 from pathlib import Path
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 
+from core.logging_config import get_logger
 from core.analytics import hash_session, log_event
 from core.parsers.file_parser import extract_text
 from core.parsers.url_scraper import scrape_jd_from_url
 from core.evaluator.pipeline import run_evaluation
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/evaluate", tags=["evaluate"])
 
@@ -44,6 +47,7 @@ async def evaluate_by_upload(
         request.client.host if request.client else "unknown",
         request.headers.get("user-agent", ""),
     )
+    logger.info("Evaluation request received via upload", extra={"session": session})
     await log_event("evaluation_started", session)
 
     jd_bytes = _validate_and_read(await jd_file.read(), jd_file.filename)
@@ -63,6 +67,10 @@ async def evaluate_by_upload(
     latency_ms = round((time.perf_counter() - t0) * 1000)
 
     evaluation_id = str(uuid.uuid4())
+    logger.info(
+        "Evaluation completed via upload",
+        extra={"evaluation_id": evaluation_id, "latency_ms": latency_ms, "session": session},
+    )
     await log_event("evaluation_completed", session, latency_ms=latency_ms, evaluation_id=evaluation_id)
     return {"evaluation_id": evaluation_id, **result}
 
@@ -78,6 +86,7 @@ async def evaluate_by_url(
         request.client.host if request.client else "unknown",
         request.headers.get("user-agent", ""),
     )
+    logger.info("Evaluation request received via URL", extra={"session": session})
     await log_event("evaluation_started", session)
 
     cv_bytes = _validate_and_read(await cv_file.read(), cv_file.filename)
@@ -87,6 +96,7 @@ async def evaluate_by_url(
         jd_text = await scrape_jd_from_url(jd_url)
         cv_text = extract_text(cv_bytes, cv_file.filename)
     except (ValueError, RuntimeError) as e:
+        logger.warning("Parsing failed", extra={"error": str(e), "session": session})
         raise HTTPException(status_code=400, detail=str(e))
 
     t0 = time.perf_counter()
@@ -94,5 +104,9 @@ async def evaluate_by_url(
     latency_ms = round((time.perf_counter() - t0) * 1000)
 
     evaluation_id = str(uuid.uuid4())
+    logger.info(
+        "Evaluation completed via URL",
+        extra={"evaluation_id": evaluation_id, "latency_ms": latency_ms, "session": session},
+    )
     await log_event("evaluation_completed", session, latency_ms=latency_ms, evaluation_id=evaluation_id)
     return {"evaluation_id": evaluation_id, **result}
