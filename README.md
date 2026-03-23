@@ -2,6 +2,12 @@
 
 A candidate-facing evaluation tool that scores CV-to-JD fit and gives actionable gap advice — powered by the Claude API.
 
+## Screenshots
+
+| Evaluation Form | Results — Score & Gaps |
+|---|---|
+| ![Evaluation form](docs/screenshots/01_evaluate_form.png) | ![Results page](docs/screenshots/03_results_score.png) |
+
 ## What It Does
 
 - **Upload or URL-fetch a Job Description** (PDF, DOCX, or paste a public URL)
