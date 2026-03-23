@@ -10,7 +10,7 @@ from core.evaluator.pipeline import run_evaluation
 router = APIRouter(prefix="/evaluate", tags=["evaluate"])
 
 UPLOAD_DIR = Path("/tmp/uploads")
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 def _save_upload(file_bytes: bytes, filename: str) -> Path:
@@ -26,7 +26,7 @@ def _validate_and_read(file_bytes: bytes, filename: str) -> bytes:
     if len(file_bytes) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=400,
-            detail=f"File '{filename}' exceeds the 10 MB limit.",
+            detail="File too large. Maximum size is 5 MB.",
         )
     return file_bytes
 

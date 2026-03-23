@@ -100,8 +100,8 @@ def test_invalid_file_type_returns_400_error_json():
 
 
 def test_file_too_large_returns_400():
-    """Uploading a file exceeding 10 MB returns 400 with {\"error\": ...}."""
-    oversized = b"x" * (10 * 1024 * 1024 + 1)
+    """Uploading a file exceeding 5 MB returns 400 with {\"error\": \"File too large. Maximum size is 5 MB.\"}."""
+    oversized = b"x" * (5 * 1024 * 1024 + 1)
     response = client.post(
         "/api/evaluate/upload",
         files={
@@ -112,7 +112,23 @@ def test_file_too_large_returns_400():
     assert response.status_code == 400
     data = response.json()
     assert "error" in data
-    assert "10 mb" in data["error"].lower() or "limit" in data["error"].lower()
+    assert data["error"] == "File too large. Maximum size is 5 MB."
+
+
+def test_file_too_large_url_endpoint_returns_400():
+    """Uploading a CV > 5 MB to the URL endpoint returns 400 with the size error."""
+    oversized = b"x" * (5 * 1024 * 1024 + 1)
+    response = client.post(
+        "/api/evaluate/url",
+        data={"jd_url": "https://example.com/job"},
+        files={
+            "cv_file": ("cv.pdf", io.BytesIO(oversized), "application/pdf"),
+        },
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert "error" in data
+    assert data["error"] == "File too large. Maximum size is 5 MB."
 
 
 @patch("api.routes.evaluate.run_evaluation", new_callable=AsyncMock)
